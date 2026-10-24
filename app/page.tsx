@@ -245,12 +245,6 @@ useEffect(() => {
               <span className="eyebrow">YOUR TOOLKIT</span><h1 className="page-title mt-2">CyberLearn Resources</h1><p className="muted mt-2">Guides and tutorials hosted on CyberLearn, so you can learn and practise without leaving the site.</p>
               <div className="resource-grid mt-7">{tutorials.map((item) => <button className="panel resource-card text-left" key={item.id} onClick={() => setActiveTutorial(item.id)}><span className="eyebrow">ON-SITE TUTORIAL · {item.category}</span><h3>{item.title} →</h3><p className="muted">{item.summary}</p><p className="muted mt-3">{item.sections.length} short lessons · Free</p></button>)}</div>
             </>
-            <>
-              <span className="eyebrow">YOUR TOOLKIT</span><h1 className="page-title mt-2">Free resources</h1><p className="muted mt-2">Trusted places to continue your cybersecurity journey.</p>
-              <div className="resource-grid mt-7">
-                {[["OverTheWire","Linux and security wargames","https://overthewire.org/wargames/"],["OWASP","Web application security guides","https://owasp.org/www-project-top-ten/"],["Cisco Skills for All","Networking and cybersecurity courses","https://skillsforall.com/"],["PortSwigger Academy","Free web security training labs","https://portswigger.net/web-security"],["MDN Web Docs","Learn how the web works","https://developer.mozilla.org/"],["TryHackMe","Guided cybersecurity learning","https://tryhackme.com/"]].map(([name, desc, url]) => <a className="panel resource-card" href={url} target="_blank" rel="noreferrer" key={name}><span className="eyebrow">FREE LEARNING</span><h3>{name} ↗</h3><p className="muted">{desc}</p></a>)}
-              </div>
-            </>
           ) : tab === "Learning paths" ? (
             <><span className="eyebrow">YOUR CURRICULUM</span><h1 className="page-title mt-2">Learning paths</h1><p className="muted mt-2">Build skills in the right order, starting from zero.</p><div className="course-grid mt-7">{courses.map((course) => <CourseCard key={course.id} course={course} onClick={() => { setTab("Hands-on labs"); setActiveLab(course.id === "linux" ? "terminal" : course.id === "network" ? "network" : "web"); }} />)}</div></>
           ) : tab === "Hands-on labs" ? (

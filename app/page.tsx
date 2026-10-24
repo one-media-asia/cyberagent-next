@@ -69,7 +69,7 @@ useEffect(() => {
 }, [userId]);
 
   const lab = labs.find((item) => item.id === activeLab);
-  const score = labs.filter((item) => answers[item.id] === item.answer).length;
+  const score = completed.length;
   const progress = Math.round((completed.length / labs.length) * 100);
 
  async function chooseAnswer(id: string, answer: string) {

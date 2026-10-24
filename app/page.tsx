@@ -23,31 +23,87 @@ export default function Home() {
   const [showResources, setShowResources] = useState(false);
 
 const [userEmail, setUserEmail] = useState<string | null>(null);
-
+const [userId, setUserId] = useState<string | null>(null);
 useEffect(() => {
   supabase.auth.getUser().then(({ data }) => {
     setUserEmail(data.user?.email ?? null);
-  });
+setUserId(data.user?.id ?? null);  });
 
   const {
     data: { subscription },
   } = supabase.auth.onAuthStateChange((_event, session) => {
-    setUserEmail(session?.user?.email ?? null);
-  });
+  setUserEmail(session?.user?.email ?? null);
+  setUserId(session?.user?.id ?? null);
+});
 
   return () => subscription.unsubscribe();
 }, []);
+
+useEffect(() => {
+  if (!userId) {
+    setCompleted([]);
+    setAnswers({});
+    return;
+  }
+
+  async function loadProgress() {
+    const { data, error } = await supabase
+      .from("learning_progress")
+      .select("course_id, completed")
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("Could not load learning progress:", error.message);
+      return;
+    }
+
+    const savedCompleted = (data ?? [])
+      .filter((item) => item.completed)
+      .map((item) => item.course_id)
+      .filter((id) => labs.some((lab) => lab.id === id));
+
+    setCompleted(savedCompleted);
+  }
+
+  loadProgress();
+}, [userId]);
 
   const lab = labs.find((item) => item.id === activeLab);
   const score = labs.filter((item) => answers[item.id] === item.answer).length;
   const progress = Math.round((completed.length / labs.length) * 100);
 
-  function chooseAnswer(id: string, answer: string) {
-    setAnswers((old) => ({ ...old, [id]: answer }));
-    if (answer === labs.find((item) => item.id === id)?.answer) {
-      setCompleted((old) => old.includes(id) ? old : [...old, id]);
-    }
+ async function chooseAnswer(id: string, answer: string) {
+  setAnswers((old) => ({ ...old, [id]: answer }));
+
+  const currentLab = labs.find((item) => item.id === id);
+  if (!currentLab || answer !== currentLab.answer) return;
+
+  setCompleted((old) =>
+    old.includes(id) ? old : [...old, id]
+  );
+
+  if (!userId) {
+    alert("Please sign in to save your progress.");
+    return;
   }
+
+  const { error } = await supabase
+    .from("learning_progress")
+    .upsert(
+      {
+        user_id: userId,
+        course_id: id,
+        completed: true,
+        quiz_score: 100,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,course_id" }
+    );
+
+  if (error) {
+    console.error("Could not save progress:", error.message);
+    alert("Progress could not be saved. Please try again.");
+  }  }
 
   return (
     <main className="min-h-screen bg-[#080d18] text-slate-100">

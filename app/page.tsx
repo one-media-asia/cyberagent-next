@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 const courses = [
   { id: "linux", icon: "⌘", title: "Linux Fundamentals", category: "SYSTEMS", level: "Beginner", lessons: 8, progress: 25, color: "cyan" },
   { id: "network", icon: "⌁", title: "Networking Basics", category: "NETWORKING", level: "Beginner", lessons: 10, progress: 0, color: "violet" },
@@ -20,6 +21,22 @@ export default function Home() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [completed, setCompleted] = useState<string[]>([]);
   const [showResources, setShowResources] = useState(false);
+
+const [userEmail, setUserEmail] = useState<string | null>(null);
+
+useEffect(() => {
+  supabase.auth.getUser().then(({ data }) => {
+    setUserEmail(data.user?.email ?? null);
+  });
+
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((_event, session) => {
+    setUserEmail(session?.user?.email ?? null);
+  });
+
+  return () => subscription.unsubscribe();
+}, []);
 
   const lab = labs.find((item) => item.id === activeLab);
   const score = labs.filter((item) => answers[item.id] === item.answer).length;
@@ -47,7 +64,29 @@ export default function Home() {
       </aside>
 
       <section className="main-area">
-        <header className="topbar"><div className="breadcrumb">Academy <span>/</span> {tab}</div><div className="top-right"><a href="/login" className="text-sm text-cyan-400 hover:text-cyan-300">Sign in / Create account</a><span className="status-pill"><span className="online-dot" /> Learning mode</span><div className="avatar">CL</div></div></header>
+        <header className="topbar"><div className="breadcrumb">Academy <span>/</span> {tab}</div><div className="top-right">{userEmail ? (
+  <>
+    <span className="text-sm text-cyan-400">{userEmail}</span>
+    <button
+      onClick={async () => {
+        const { error } = await supabase.auth.signOut()
+        if (error) {
+          alert("Sign out failed: " + error.message)
+          return
+        }
+        setUserEmail(null)
+        window.location.href = "/"
+      }}
+      className="text-sm text-cyan-400 hover:text-cyan-300"
+    >
+      Sign out
+    </button>
+  </>
+) : (
+  <a href="/login" className="text-sm text-cyan-400 hover:text-cyan-300">
+    Sign in / Create account
+  </a>
+)}<span className="status-pill"><span className="online-dot" /> Learning mode</span><div className="avatar">CL</div></div></header>
         <div className="content">
           {activeLab && lab ? (
             <div className="max-w-3xl">

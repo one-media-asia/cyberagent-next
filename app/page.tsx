@@ -47,7 +47,7 @@ export default function Home() {
       </aside>
 
       <section className="main-area">
-        <header className="topbar"><div className="breadcrumb">Academy <span>/</span> {tab}</div><div className="top-right"><span className="status-pill"><span className="online-dot" /> Learning mode</span><div className="avatar">CL</div></div></header>
+        <header className="topbar"><div className="breadcrumb">Academy <span>/</span> {tab}</div><div className="top-right"><a href="/login" className="text-sm text-cyan-400 hover:text-cyan-300">Sign in / Create account</a><span className="status-pill"><span className="online-dot" /> Learning mode</span><div className="avatar">CL</div></div></header>
         <div className="content">
           {activeLab && lab ? (
             <div className="max-w-3xl">

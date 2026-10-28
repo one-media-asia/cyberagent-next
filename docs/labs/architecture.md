@@ -1,5 +1,5 @@
 # CyberLearn hands-on labs: architecture and rollout
-
+#
 ## Status
 The dashboard's current labs and CTF challenges are browser-rendered simulations; they are not isolated compute environments. Do not describe them as real shells or live network access.
 

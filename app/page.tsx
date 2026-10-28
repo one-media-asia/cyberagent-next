@@ -128,16 +128,16 @@ useEffect(() => {
 
   const currentLab = labs.find((item) => item.id === id);
   if (!currentLab || answer !== currentLab.answer) return;
+  if (completed.includes(id)) return;
 
-  setCompleted((old) =>
-    old.includes(id) ? old : [...old, id]
-  );
-
+  // Guests can practise, but their progress is only held in this browser session.
   if (!userId) {
-    alert("Please sign in to save your progress.");
+    setCompleted((old) => old.includes(id) ? old : [...old, id]);
+    alert("Please sign in to save your progress to your account.");
     return;
   }
 
+  // For signed-in learners, only mark the lab complete after Supabase confirms the save.
   const { error } = await supabase
     .from("learning_progress")
     .upsert(
@@ -153,8 +153,12 @@ useEffect(() => {
 
   if (error) {
     console.error("Could not save progress:", error.message);
-    alert("Progress could not be saved. Please try again.");
-  }  }
+    alert("Your answer is correct, but progress could not be saved. Please try again.");
+    return;
+  }
+
+  setCompleted((old) => old.includes(id) ? old : [...old, id]);
+}
 
   return (
     <main className="min-h-screen bg-[#080d18] text-slate-100">

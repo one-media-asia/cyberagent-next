@@ -124,76 +124,39 @@ useEffect(() => {
   const progress = Math.round((completed.length / labs.length) * 100);
 
 async function chooseAnswer(id: string, answer: string) {
-  setAnswers((old) => ({ ...old, [id]: answer }));
+    setAnswers((old) => ({ ...old, [id]: answer }));
 
-  const currentLab = labs.find((item) => item.id === id);
+    const currentLab = labs.find((item) => item.id === id);
+    if (!currentLab || answer !== currentLab.answer) return;
 
-  if (!currentLab || answer !== currentLab.answer) return;
+    if (!userId) {
+      alert("Correct answer! Sign in to save your progress.");
+      return;
+    }
 
-  // Require login before saving progress
-  if (!userId) {
-    alert("Correct answer! Sign in to save your progress.");
-    return;
-  }
+    const { error } = await supabase
+      .from("learning_progress")
+      .upsert(
+        {
+          user_id: userId,
+          course_id: id,
+          completed: true,
+          quiz_score: 100,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,course_id" }
+      );
 
-  // Save progress to Supabase first
-  const { error } = await supabase
-    .from("learning_progress")
-    .upsert(
-      {
-        user_id: userId,
-        course_id: id,
-        completed: true,
-        quiz_score: 100,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,course_id" }
+    if (error) {
+      console.error("Could not save progress:", error.message);
+      alert("Your answer is correct, but progress could not be saved. Please try again.");
+      return;
+    }
+
+    setCompleted((old) =>
+      old.includes(id) ? old : [...old, id]
     );
-
-  // Do not mark complete if saving failed
-  if (error) {
-    console.error("Could not save progress:", error.message);
-    alert(
-      "Your answer is correct, but progress could not be saved. Please try again."
-    );
-    return;
   }
-
-  // Mark complete only after successful save
-  setCompleted((old) =>
-    old.includes(id) ? old : [...old, id]
-  );
-}
-
-  const currentLab = labs.find((item) => item.id === id);
-  if (!currentLab || answer !== currentLab.answer) return;
-
-  setCompleted((old) =>
-    old.includes(id) ? old : [...old, id]
-  );
-
-  if (!userId) {
-    alert("Please sign in to save your progress.");
-    return;
-  }
-
-  const { error } = await supabase
-    .from("learning_progress")
-    .upsert(
-      {
-        user_id: userId,
-        course_id: id,
-        completed: true,
-        quiz_score: 100,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,course_id" }
-    );
-
-  if (error) {
-    console.error("Could not save progress:", error.message);
-    alert("Progress could not be saved. Please try again.");
-  }  }
 
   return (
     <main className="min-h-screen bg-[#080d18] text-slate-100">

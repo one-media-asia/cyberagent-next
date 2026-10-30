@@ -129,12 +129,8 @@ useEffect(() => {
   const currentLab = labs.find((item) => item.id === id);
   if (!currentLab || answer !== currentLab.answer) return;
 
-  setCompleted((old) =>
-    old.includes(id) ? old : [...old, id]
-  );
-
   if (!userId) {
-    alert("Please sign in to save your progress.");
+    alert("Correct answer! Sign in to save your progress.");
     return;
   }
 
@@ -153,8 +149,14 @@ useEffect(() => {
 
   if (error) {
     console.error("Could not save progress:", error.message);
-    alert("Progress could not be saved. Please try again.");
-  }  }
+    alert("Your answer is correct, but progress could not be saved. Please try again.");
+    return;
+  }
+
+  setCompleted((old) =>
+    old.includes(id) ? old : [...old, id]
+  );
+}
 
   return (
     <main className="min-h-screen bg-[#080d18] text-slate-100">

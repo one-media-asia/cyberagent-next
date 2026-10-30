@@ -123,8 +123,47 @@ useEffect(() => {
   const score = completed.length;
   const progress = Math.round((completed.length / labs.length) * 100);
 
- async function chooseAnswer(id: string, answer: string) {
+async function chooseAnswer(id: string, answer: string) {
   setAnswers((old) => ({ ...old, [id]: answer }));
+
+  const currentLab = labs.find((item) => item.id === id);
+
+  if (!currentLab || answer !== currentLab.answer) return;
+
+  // Require login before saving progress
+  if (!userId) {
+    alert("Correct answer! Sign in to save your progress.");
+    return;
+  }
+
+  // Save progress to Supabase first
+  const { error } = await supabase
+    .from("learning_progress")
+    .upsert(
+      {
+        user_id: userId,
+        course_id: id,
+        completed: true,
+        quiz_score: 100,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,course_id" }
+    );
+
+  // Do not mark complete if saving failed
+  if (error) {
+    console.error("Could not save progress:", error.message);
+    alert(
+      "Your answer is correct, but progress could not be saved. Please try again."
+    );
+    return;
+  }
+
+  // Mark complete only after successful save
+  setCompleted((old) =>
+    old.includes(id) ? old : [...old, id]
+  );
+}
 
   const currentLab = labs.find((item) => item.id === id);
   if (!currentLab || answer !== currentLab.answer) return;

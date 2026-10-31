@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-const courses = [
+const fallbackCourses = [
   { id: "linux", icon: "⌘", title: "Linux Fundamentals", category: "SYSTEMS", level: "Beginner", lessons: 8, progress: 25, color: "cyan" },
   { id: "network", icon: "⌁", title: "Networking Basics", category: "NETWORKING", level: "Beginner", lessons: 10, progress: 0, color: "violet" },
   { id: "web", icon: "⌘", title: "Web Security Essentials", category: "WEB SECURITY", level: "Beginner", lessons: 12, progress: 0, color: "emerald" },
@@ -53,6 +53,29 @@ const labs = [
 ];
 
 export default function Home() {
+  const [courses, setCourses] = useState(fallbackCourses);
+  const [learningPaths, setLearningPaths] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/courses/`)
+      .then((r) => { if (!r.ok) throw new Error("Course API error"); return r.json(); })
+      .then((data) => setCourses(data.map((c: any) => ({
+        id: String(c.id), icon: "⌘", title: c.title,
+        category: c.category.toUpperCase(),
+        level: c.level.charAt(0).toUpperCase() + c.level.slice(1),
+        lessons: 5, progress: 0,
+        color: c.category.toLowerCase().includes("network") ? "violet" : c.category.toLowerCase().includes("web") ? "emerald" : "cyan"
+      }))))
+      .catch((e) => console.error("Could not load courses:", e));
+  }, []);
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/learning-paths/`)
+      .then((r) => { if (!r.ok) throw new Error("Learning paths API error"); return r.json(); })
+      .then((data) => setLearningPaths(data))
+      .catch((e) => console.error("Could not load learning paths:", e));
+  }, []);
+
   const [tab, setTab] = useState("Overview");
   const [activeLab, setActiveLab] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -260,7 +283,7 @@ async function chooseAnswer(id: string, answer: string) {
               <div className="resource-grid mt-7">{tutorials.map((item) => <button className="panel resource-card text-left" key={item.id} onClick={() => setActiveTutorial(item.id)}><span className="eyebrow">ON-SITE TUTORIAL · {item.category}</span><h3>{item.title} →</h3><p className="muted">{item.summary}</p><p className="muted mt-3">{item.sections.length} short lessons · Free</p></button>)}</div>
             </>
           ) : tab === "Learning paths" ? (
-            <><span className="eyebrow">YOUR CURRICULUM</span><h1 className="page-title mt-2">Learning paths</h1><p className="muted mt-2">Build skills in the right order, starting from zero.</p><div className="course-grid mt-7">{courses.map((course) => <CourseCard key={course.id} course={course} onClick={() => { setTab("Hands-on labs"); setActiveLab(course.id === "linux" ? "terminal" : course.id === "network" ? "network" : "web"); }} />)}</div></>
+            <><span className="eyebrow">YOUR CURRICULUM</span><h1 className="page-title mt-2">Learning paths</h1><p className="muted mt-2">Build skills in the right order, starting from zero.</p><div className="course-grid mt-7">{learningPaths.map((path) => <div className="panel course-card" key={path.id}><span className="eyebrow">LEARNING PATH</span><h3>{path.title}</h3><p className="muted">{path.description}</p><p className="muted mt-3">{path.courses.length} course{path.courses.length === 1 ? "" : "s"}: {path.courses.map((course: any) => course.title).join(", ")}</p><button className="primary-button mt-5" onClick={() => { setTab("Hands-on labs"); setActiveLab(path.slug.includes("linux") ? "terminal" : path.slug.includes("network") ? "network" : "web"); }}>Explore path →</button></div>)}</div></>
           ) : tab === "Hands-on labs" ? (
             <><span className="eyebrow">PRACTICE ZONE</span><h1 className="page-title mt-2">Hands-on labs<span className="text-cyan-400">.</span></h1><p className="muted mt-2">Learn by doing in safe, simulated exercises.</p><div className="lab-grid mt-7">{labs.map((item) => <button className="panel lab-card text-left" key={item.id} onClick={() => setActiveLab(item.id)}><div className="flex items-center justify-between"><span className="lab-icon">⌘</span><span className="eyebrow">{item.time.toUpperCase()}</span></div><span className="tag mt-5">{item.tag}</span><h3>{item.title}</h3><p className="muted">{item.description}</p><div className="lab-footer"><span>{completed.includes(item.id) ? "✓ Completed" : "Start exercise"}</span><span>→</span></div></button>)}</div></>
           ) : (
@@ -285,6 +308,6 @@ function Stat({ label, value, hint, icon }: { label: string; value: string; hint
   return <div className="panel stat-card"><div className="stat-top"><span>{label}</span><span className="stat-icon">{icon}</span></div><div className="stat-value">{value}</div><div className="muted text-xs mt-2">{hint}</div></div>;
 }
 
-function CourseCard({ course, onClick }: { course: (typeof courses)[number]; onClick: () => void }) {
+function CourseCard({ course, onClick }: { course: (typeof fallbackCourses)[number]; onClick: () => void }) {
   return <button className="panel course-card text-left" onClick={onClick}><div className="course-top"><span className={`course-icon ${course.color}`}>{course.icon}</span><span className="eyebrow">{course.category}</span></div><h3>{course.title}</h3><p className="muted">{course.level} · {course.lessons} lessons</p><div className="progress-track mt-5"><div className="progress-fill" style={{ width: `${course.progress}%` }}/></div><div className="course-bottom"><span>{course.progress}% complete</span><span>Explore →</span></div></button>;
 }

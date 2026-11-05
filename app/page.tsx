@@ -285,12 +285,12 @@ async function chooseAnswer(id: string, answer: string) {
                   <h1 className="page-title mt-2">AI Assistant<span className="text-cyan-400">.</span></h1>
                   <p className="muted mt-2">Ask questions, explore cybersecurity concepts, and get help with your learning.</p>
                 </div>
-                <a className="assistant-open-link" href="https://onemediaasias-agent.vercel.app/" target="_blank" rel="noreferrer">Open in new tab ↗</a>
+                <a className="assistant-open-link" href="https://ai.onemedia.asia/" target="_blank" rel="noreferrer">Open in new tab ↗</a>
               </div>
               <div className="assistant-frame-wrap">
                 <iframe
                   className="assistant-frame"
-                  src="https://onemediaasias-agent.vercel.app/"
+                  src="https://ai.onemedia.asia/"
                   title="OneMedia AI Assistant"
                   loading="lazy"
                   allow="clipboard-write"

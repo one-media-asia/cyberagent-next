@@ -192,9 +192,9 @@ async function chooseAnswer(id: string, answer: string) {
       <aside className="sidebar">
         <a href="#" className="brand"><span className="brand-icon">C</span><span>cyber<span className="text-cyan-400">learn</span><small>SECURITY ACADEMY</small></span></a>
         <p className="nav-label">LEARN</p>
-        {["Overview", "Learning paths", "Hands-on labs", "Capture the Flag", "Resources"].map((item, i) => (
+        {["Overview", "Learning paths", "Hands-on labs", "Capture the Flag", "AI Assistant", "Resources"].map((item, i) => (
           <button key={item} onClick={() => { setTab(item); setActiveLab(null); setActiveCtf(null); setActiveTutorial(null); setShowResources(item === "Resources"); }} className={`nav-item ${tab === item ? "nav-active" : ""}`}>
-            <span>{["◫", "▤", "⌘", "⚑", "↗"][i]}</span>{item}
+            <span>{["◫", "▤", "⌘", "⚑", "✧", "↗"][i]}</span>{item}
             {item === "Hands-on labs" && <span className="nav-count">{labs.length}</span>}
             {item === "Capture the Flag" && <span className="nav-count">{ctfChallenges.length}</span>}
           </button>
@@ -277,6 +277,27 @@ async function chooseAnswer(id: string, answer: string) {
               <div className="stats-grid mt-7"><Stat label="CHALLENGES" value={String(ctfChallenges.length)} hint="Beginner missions" icon="⚑"/><Stat label="FLAGS FOUND" value={`${completedCtf.length}/${ctfChallenges.length}`} hint="Saved to your account" icon="✧"/><Stat label="CTF XP" value={String(completedCtf.length * 100)} hint="100 points per flag" icon="↗"/><Stat label="NEXT MISSION" value={completedCtf.length === ctfChallenges.length ? "Complete" : "Ready"} hint="Keep investigating" icon="⚡"/></div>
               <div className="lab-grid">{ctfChallenges.map((challenge) => <button className="panel lab-card text-left" key={challenge.id} onClick={() => setActiveCtf(challenge.id)}><div className="flex items-center justify-between"><span className="lab-icon">⚑</span><span className="eyebrow">{challenge.points} POINTS</span></div><span className="tag mt-5">{challenge.category}</span><h3>{challenge.title}</h3><p className="muted">{challenge.description}</p><div className="lab-footer"><span>{completedCtf.includes(challenge.id) ? "✓ Flag captured" : "Start mission"}</span><span>→</span></div></button>)}</div>
             </>
+          ) : tab === "AI Assistant" ? (
+            <section className="assistant-panel">
+              <div className="assistant-heading">
+                <div>
+                  <span className="eyebrow">CYBERLEARN AI</span>
+                  <h1 className="page-title mt-2">AI Assistant<span className="text-cyan-400">.</span></h1>
+                  <p className="muted mt-2">Ask questions, explore cybersecurity concepts, and get help with your learning.</p>
+                </div>
+                <a className="assistant-open-link" href="https://onemediaasias-agent.vercel.app/" target="_blank" rel="noreferrer">Open in new tab ↗</a>
+              </div>
+              <div className="assistant-frame-wrap">
+                <iframe
+                  className="assistant-frame"
+                  src="https://onemediaasias-agent.vercel.app/"
+                  title="OneMedia AI Assistant"
+                  loading="lazy"
+                  allow="clipboard-write"
+                />
+              </div>
+              <p className="muted assistant-note">This opens the existing OneMedia AI agent inside CyberLearn. Its original agent instructions and backend remain hosted separately.</p>
+            </section>
           ) : showResources ? (
             <>
               <span className="eyebrow">YOUR TOOLKIT</span><h1 className="page-title mt-2">CyberLearn Resources</h1><p className="muted mt-2">Guides and tutorials hosted on CyberLearn, so you can learn and practise without leaving the site.</p>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import JoshPanel from "@/app/_components/josh-panel";
 const fallbackCourses = [
   { id: "linux", icon: "⌘", title: "Linux Fundamentals", category: "SYSTEMS", level: "Beginner", lessons: 8, progress: 25, color: "cyan" },
   { id: "network", icon: "⌁", title: "Networking Basics", category: "NETWORKING", level: "Beginner", lessons: 10, progress: 0, color: "violet" },
@@ -192,9 +193,9 @@ async function chooseAnswer(id: string, answer: string) {
       <aside className="sidebar">
         <a href="#" className="brand"><span className="brand-icon">C</span><span>cyber<span className="text-cyan-400">learn</span><small>SECURITY ACADEMY</small></span></a>
         <p className="nav-label">LEARN</p>
-        {["Overview", "Learning paths", "Hands-on labs", "Capture the Flag", "AI Assistant", "Resources"].map((item, i) => (
+        {["Overview", "Learning paths", "Hands-on labs", "Capture the Flag", "AI Assistant", "Ask Josh", "Resources"].map((item, i) => (
           <button key={item} onClick={() => { setTab(item); setActiveLab(null); setActiveCtf(null); setActiveTutorial(null); setShowResources(item === "Resources"); }} className={`nav-item ${tab === item ? "nav-active" : ""}`}>
-            <span>{["◫", "▤", "⌘", "⚑", "✧", "↗"][i]}</span>{item}
+            <span>{["◫", "▤", "⌘", "⚑", "✧", "✦", "↗"][i]}</span>{item}
             {item === "Hands-on labs" && <span className="nav-count">{labs.length}</span>}
             {item === "Capture the Flag" && <span className="nav-count">{ctfChallenges.length}</span>}
           </button>
@@ -277,6 +278,8 @@ async function chooseAnswer(id: string, answer: string) {
               <div className="stats-grid mt-7"><Stat label="CHALLENGES" value={String(ctfChallenges.length)} hint="Beginner missions" icon="⚑"/><Stat label="FLAGS FOUND" value={`${completedCtf.length}/${ctfChallenges.length}`} hint="Saved to your account" icon="✧"/><Stat label="CTF XP" value={String(completedCtf.length * 100)} hint="100 points per flag" icon="↗"/><Stat label="NEXT MISSION" value={completedCtf.length === ctfChallenges.length ? "Complete" : "Ready"} hint="Keep investigating" icon="⚡"/></div>
               <div className="lab-grid">{ctfChallenges.map((challenge) => <button className="panel lab-card text-left" key={challenge.id} onClick={() => setActiveCtf(challenge.id)}><div className="flex items-center justify-between"><span className="lab-icon">⚑</span><span className="eyebrow">{challenge.points} POINTS</span></div><span className="tag mt-5">{challenge.category}</span><h3>{challenge.title}</h3><p className="muted">{challenge.description}</p><div className="lab-footer"><span>{completedCtf.includes(challenge.id) ? "✓ Flag captured" : "Start mission"}</span><span>→</span></div></button>)}</div>
             </>
+          ) : tab === "Ask Josh" ? (
+            <JoshPanel />
           ) : tab === "AI Assistant" ? (
             <section className="assistant-panel">
               <div className="assistant-heading">

@@ -57,7 +57,7 @@ export default function Home() {
   const [learningPaths, setLearningPaths] = useState<any[]>([]);
 
   useEffect(() => {
-   fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/academy/courses/`)
+   fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/academy/course/`)
       .then((r) => { if (!r.ok) throw new Error("Course API error"); return r.json(); })
       .then((data) => setCourses(data.map((c: any) => ({
         id: String(c.id), icon: "⌘", title: c.title,
@@ -70,7 +70,8 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/academy/courses/`)      .then((r) => { if (!r.ok) throw new Error("Learning paths API error"); return r.json(); })
+fetch(`${process.env.NEXT_PUBLIC_API_URL} https://api.onemedia.asia`)    
+  .then((r) => { if (!r.ok) throw new Error("Learning paths API error"); return r.json(); })
       .then((data) => setLearningPaths(data))
       .catch((e) => console.error("Could not load learning paths:", e));
   }, []);

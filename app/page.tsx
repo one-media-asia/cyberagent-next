@@ -70,7 +70,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-fetch(`${process.env.NEXT_PUBLIC_API_URL} https://api.onemedia.asia`)    
+fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/academy/learning-paths/`)    
   .then((r) => { if (!r.ok) throw new Error("Learning paths API error"); return r.json(); })
       .then((data) => setLearningPaths(data))
       .catch((e) => console.error("Could not load learning paths:", e));

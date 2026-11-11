@@ -23,38 +23,60 @@ export default function JoshPage() {
 
   useEffect(() => {
     let active = true;
+
     async function initialise() {
       try {
         const saved = window.localStorage.getItem(STORAGE_KEY);
+        let savedToken = "";
+
         if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed.token && (typeof parsed.remaining === "number" || parsed.remaining === null)) {
-            if (active) {
-              setToken(parsed.token);
-              setRemaining(parsed.remaining);
-              setStarting(false);
+          try {
+            const parsed = JSON.parse(saved);
+            if (typeof parsed.token === "string" && parsed.token) {
+              savedToken = parsed.token;
             }
-            return;
+          } catch {
+            throw new Error("Josh couldn't read your saved trial session. Please contact CyberLearn support.");
           }
         }
+
+        // Existing sessions are always checked against the server. Never trust
+        // the browser's cached prompt count as the source of truth.
         const response = await fetch(`${API_BASE}/api/cyberagent/trial/start/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
+          body: JSON.stringify(savedToken ? { token: savedToken } : {}),
         });
         const data = await response.json();
-        if (!response.ok || !data.token) throw new Error(data.error || data.detail || "Josh couldn't start a trial session.");
-        if (!active) return;
-        const prompts = typeof data.prompts_remaining === "number" ? data.prompts_remaining : 3;
-        setToken(data.token);
+
+        if (!response.ok) {
+          throw new Error(data.error || data.detail || "Josh couldn't restore your trial session.");
+        }
+
+        const activeToken = savedToken || data.token;
+        if (!active || !activeToken) return;
+
+        const prompts = data.paid_access
+          ? null
+          : typeof data.prompts_remaining === "number"
+            ? data.prompts_remaining
+            : 3;
+
+        setToken(activeToken);
         setRemaining(prompts);
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: data.token, remaining: prompts }));
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          token: activeToken,
+          remaining: prompts,
+        }));
       } catch (err) {
-        if (active) setError(err instanceof Error ? err.message : "Could not connect to Josh.");
+        if (active) {
+          setError(err instanceof Error ? err.message : "Could not connect to Josh.");
+        }
       } finally {
         if (active) setStarting(false);
       }
     }
+
     initialise();
     return () => { active = false; };
   }, []);

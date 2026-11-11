@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { djangoRequestPasswordReset } from '@/lib/django'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -15,11 +15,8 @@ export default function ForgotPasswordPage() {
     setMessage('')
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      })
-      if (error) throw error
-      setMessage('If an account exists for that email, a password reset link has been sent. Please check your inbox.')
+      const result = await djangoRequestPasswordReset(email)
+      setMessage(result.message)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Unable to send the reset email. Please try again.')
     } finally {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { djangoConfirmPasswordReset } from '@/lib/django'
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
@@ -20,12 +20,20 @@ export default function ResetPasswordPage() {
       return
     }
 
+    const params = new URLSearchParams(window.location.search)
+    const uid = params.get('uid')
+    const token = params.get('token')
+
+    if (!uid || !token) {
+      setMessage('This password-reset link is incomplete. Please request a new one.')
+      return
+    }
+
     setLoading(true)
     try {
-      const { error } = await supabase.auth.updateUser({ password })
-      if (error) throw error
+      const result = await djangoConfirmPasswordReset(uid, token, password)
       setSuccess(true)
-      setMessage('Your password has been updated. You can now sign in with your new password.')
+      setMessage(result.message)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Unable to update your password. Please request a new reset link.')
     } finally {
@@ -63,12 +71,12 @@ export default function ResetPasswordPage() {
                   id="password"
                   type="password"
                   autoComplete="new-password"
-                  minLength={6}
+                  minLength={8}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 outline-none focus:border-cyan-400"
-                  placeholder="At least 6 characters"
+                  placeholder="Enter a new password"
                 />
               </div>
               <div>
@@ -79,7 +87,7 @@ export default function ResetPasswordPage() {
                   id="confirmPassword"
                   type="password"
                   autoComplete="new-password"
-                  minLength={6}
+                  minLength={8}
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

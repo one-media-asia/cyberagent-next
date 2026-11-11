@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { djangoLogin, djangoRegister } from '@/lib/django'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('signup')
+  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
@@ -18,35 +20,20 @@ export default function LoginPage() {
 
     try {
       if (mode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/login`,
-          },
-        })
-
-        if (error) throw error
-
-        setMessage(
-          data.session
-            ? 'Account created! You are now signed in.'
-            : 'Account created. Check your email for a confirmation link, then sign in.'
-        )
+        const result = await djangoRegister(username, email, password)
+        setMessage(result.message || 'Account created. Check your email to verify your address.')
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-
-        if (error) throw error
-
+        try {
+          await djangoLogin(email, password)
+        } catch (djangoError) {
+          // Keep existing Supabase accounts usable while the migration is in progress.
+          const { error } = await supabase.auth.signInWithPassword({ email, password })
+          if (error) throw djangoError
+        }
         window.location.href = '/'
       }
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : 'Something went wrong.'
-      )
+      setMessage(error instanceof Error ? error.message : 'Something went wrong.')
     } finally {
       setLoading(false)
     }
@@ -78,9 +65,7 @@ export default function LoginPage() {
                 setMessage('')
               }}
               className={`rounded-md px-3 py-2 text-sm font-medium ${
-                mode === 'signup'
-                  ? 'bg-cyan-400 text-slate-950'
-                  : 'text-slate-300'
+                mode === 'signup' ? 'bg-cyan-400 text-slate-950' : 'text-slate-300'
               }`}
             >
               Create account
@@ -92,9 +77,7 @@ export default function LoginPage() {
                 setMessage('')
               }}
               className={`rounded-md px-3 py-2 text-sm font-medium ${
-                mode === 'login'
-                  ? 'bg-cyan-400 text-slate-950'
-                  : 'text-slate-300'
+                mode === 'login' ? 'bg-cyan-400 text-slate-950' : 'text-slate-300'
               }`}
             >
               Sign in
@@ -102,6 +85,26 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === 'signup' && (
+              <div>
+                <label htmlFor="username" className="mb-1 block text-sm text-slate-300">
+                  Username
+                </label>
+                <input
+                  id="username"
+                  type="text"
+                  autoComplete="username"
+                  required
+                  minLength={3}
+                  maxLength={150}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 outline-none focus:border-cyan-400"
+                  placeholder="Choose a username"
+                />
+              </div>
+            )}
+
             <div>
               <label htmlFor="email" className="mb-1 block text-sm text-slate-300">
                 Email address
@@ -126,12 +129,12 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                minLength={6}
+                minLength={8}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 outline-none focus:border-cyan-400"
-                placeholder="At least 6 characters"
+                placeholder="Enter your password"
               />
             </div>
 
@@ -151,11 +154,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full rounded-lg bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-60"
             >
-              {loading
-                ? 'Please wait…'
-                : mode === 'signup'
-                  ? 'Create free account'
-                  : 'Sign in'}
+              {loading ? 'Please wait…' : mode === 'signup' ? 'Create free account' : 'Sign in'}
             </button>
           </form>
 

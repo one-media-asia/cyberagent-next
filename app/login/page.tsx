@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { djangoLogin, djangoRegister } from '@/lib/django'
+import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('signup')
@@ -22,7 +23,13 @@ export default function LoginPage() {
         const result = await djangoRegister(username, email, password)
         setMessage(result.message || 'Account created. Check your email to verify your address.')
       } else {
-        await djangoLogin(email, password)
+        try {
+          await djangoLogin(email, password)
+        } catch (djangoError) {
+          // Keep existing Supabase accounts usable while the migration is in progress.
+          const { error } = await supabase.auth.signInWithPassword({ email, password })
+          if (error) throw djangoError
+        }
         window.location.href = '/'
       }
     } catch (error) {

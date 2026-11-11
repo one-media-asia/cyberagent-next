@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://api.onemedia.asia").replace(/\\/$/, "");
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://api.onemedia.asia").replace(/\/+$/, "");
 const CHECKOUT_URL = "https://checkout.revolut.com/pay/325622b3-0dd7-4f24-804f-98b9e59aa1fa";
 const STORAGE_KEY = "cyberlearn_josh_trial_v1";
 

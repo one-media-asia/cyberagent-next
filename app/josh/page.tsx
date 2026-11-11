@@ -28,7 +28,7 @@ export default function JoshPage() {
         const saved = window.localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed.token && typeof parsed.remaining === "number") {
+          if (parsed.token && (typeof parsed.remaining === "number" || parsed.remaining === null)) {
             if (active) {
               setToken(parsed.token);
               setRemaining(parsed.remaining);

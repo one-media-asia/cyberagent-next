@@ -8,6 +8,17 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://api.onemedia.asia"
 const CHECKOUT_URL = "https://checkout.revolut.com/pay/325622b3-0dd7-4f24-804f-98b9e59aa1fa";
 const STORAGE_KEY = "cyberlearn_josh_trial_v1";
 
+async function readApiResponse(response: Response): Promise<any> {
+  const contentType = response.headers.get("content-type") || "unknown content type";
+  const body = await response.text();
+  if (!contentType.toLowerCase().includes("application/json")) {
+    const preview = body.replace(/\s+/g, " ").slice(0, 180);
+    throw new Error(`CyberLearn API returned non-JSON (HTTP ${response.status}; ${contentType}) from ${response.url}. Response: ${preview}`);
+  }
+  try { return JSON.parse(body); }
+  catch { throw new Error(`CyberLearn API returned invalid JSON (HTTP ${response.status}) from ${response.url}.`); }
+}
+
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
 export default function JoshPage() {
@@ -57,7 +68,7 @@ export default function JoshPage() {
           },
           body: JSON.stringify(legacyToken ? { token: legacyToken } : {}),
         });
-        const data = await response.json();
+        const data = await readApiResponse(response);
 
         if (!response.ok) {
           throw new Error(data.error || data.detail || "Josh couldn't restore your trial session.");
@@ -112,7 +123,7 @@ export default function JoshPage() {
         },
         body: JSON.stringify({ message }),
       });
-      const data = await response.json();
+      const data = await readApiResponse(response);
       if (!response.ok) throw new Error(data.error || data.detail || data.message || "Josh couldn't answer that. Please try again.");
       setMessages((old) => [...old, { role: "assistant", content: data.reply || "I couldn't create a reply just now. Please try again." }]);
       const nextRemaining = typeof data.prompts_remaining === "number" ? data.prompts_remaining : data.prompts_remaining === null ? null : remaining;

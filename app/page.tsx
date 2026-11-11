@@ -199,6 +199,7 @@ async function chooseAnswer(id: string, answer: string) {
             {item === "Capture the Flag" && <span className="nav-count">{ctfChallenges.length}</span>}
           </button>
         ))}
+        <Link href="/josh" className="nav-item"><span>✦</span>Josh AI</Link>
         <div className="sidebar-bottom"><div className="online-dot" /> All labs run in safe simulations <p>CYBERLEARN · PREVIEW 0.1</p></div>
       </aside>
 

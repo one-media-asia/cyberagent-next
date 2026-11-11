@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://api.onemedia.asia").replace(/\/+$/, "");
 const CHECKOUT_URL = "https://checkout.revolut.com/pay/325622b3-0dd7-4f24-804f-98b9e59aa1fa";
@@ -26,26 +27,35 @@ export default function JoshPage() {
 
     async function initialise() {
       try {
-        const saved = window.localStorage.getItem(STORAGE_KEY);
-        let savedToken = "";
+        const { data: authData, error: authError } = await supabase.auth.getSession();
+        if (authError) throw authError;
+        const session = authData.session;
 
+        if (!session?.access_token) {
+          if (active) setError("Please sign in to your CyberLearn account to use Josh.");
+          return;
+        }
+
+        // Offer an old paid browser token for one-time migration. The server
+        // only accepts it for migration when its existing record is paid.
+        let legacyToken = "";
+        const saved = window.localStorage.getItem(STORAGE_KEY);
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
-            if (typeof parsed.token === "string" && parsed.token) {
-              savedToken = parsed.token;
-            }
+            if (typeof parsed.token === "string") legacyToken = parsed.token;
           } catch {
-            throw new Error("Josh couldn't read your saved trial session. Please contact CyberLearn support.");
+            window.localStorage.removeItem(STORAGE_KEY);
           }
         }
 
-        // Existing sessions are always checked against the server. Never trust
-        // the browser's cached prompt count as the source of truth.
         const response = await fetch(`${API_BASE}/api/cyberagent/trial/start/`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(savedToken ? { token: savedToken } : {}),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify(legacyToken ? { token: legacyToken } : {}),
         });
         const data = await response.json();
 
@@ -53,8 +63,7 @@ export default function JoshPage() {
           throw new Error(data.error || data.detail || "Josh couldn't restore your trial session.");
         }
 
-        const activeToken = savedToken || data.token;
-        if (!active || !activeToken) return;
+        if (!active) return;
 
         const prompts = data.paid_access
           ? null
@@ -62,12 +71,9 @@ export default function JoshPage() {
             ? data.prompts_remaining
             : 3;
 
-        setToken(activeToken);
+        setToken(session.access_token);
         setRemaining(prompts);
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          token: activeToken,
-          remaining: prompts,
-        }));
+        window.localStorage.removeItem(STORAGE_KEY);
       } catch (err) {
         if (active) {
           setError(err instanceof Error ? err.message : "Could not connect to Josh.");
@@ -92,17 +98,25 @@ export default function JoshPage() {
     setMessages((old) => [...old, { role: "user", content: message }]);
     setLoading(true);
     try {
+      const { data: authData, error: authError } = await supabase.auth.getSession();
+      if (authError) throw authError;
+      const accessToken = authData.session?.access_token;
+      if (!accessToken) throw new Error("Your sign-in has expired. Please sign in again.");
+      setToken(accessToken);
+
       const response = await fetch(`${API_BASE}/api/cyberagent/josh/chat/`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, message }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ message }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || data.detail || data.message || "Josh couldn't answer that. Please try again.");
       setMessages((old) => [...old, { role: "assistant", content: data.reply || "I couldn't create a reply just now. Please try again." }]);
       const nextRemaining = typeof data.prompts_remaining === "number" ? data.prompts_remaining : data.prompts_remaining === null ? null : remaining;
       setRemaining(nextRemaining);
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ token, remaining: nextRemaining }));
     } catch (err) {
       setMessages((old) => old.filter((item, index) => !(item.role === "user" && index === old.length - 1)));
       setInput(message);
@@ -147,7 +161,7 @@ export default function JoshPage() {
             </div>
 
             <div className="border-t border-slate-700 p-4 sm:p-5">
-              {error && <p role="alert" className="mb-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">{error}</p>}
+              {error && <p role="alert" className="mb-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">{error} {error.toLowerCase().includes("sign in") && <Link href="/login" className="font-semibold underline">Sign in</Link>}</p>}
               {trialFinished ? (
                 <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4">
                   <p className="font-semibold text-cyan-200">You've used your three free prompts.</p>

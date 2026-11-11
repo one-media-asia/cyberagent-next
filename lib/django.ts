@@ -12,6 +12,7 @@ type ApiError = {
   error?: string;
   detail?: string;
   message?: string;
+  errors?: string[];
 };
 
 export type LabProgressRecord = {
@@ -28,7 +29,11 @@ async function readJson<T>(response: Response): Promise<T> {
 
   if (!response.ok) {
     throw new Error(
-      body.error || body.detail || body.message || `Request failed (${response.status})`
+      body.error ||
+        body.detail ||
+        body.message ||
+        body.errors?.join(" ") ||
+        `Request failed (${response.status})`
     );
   }
 
@@ -89,6 +94,50 @@ export async function djangoLogin(email: string, password: string) {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
+}
+
+export async function djangoRegister(
+  username: string,
+  email: string,
+  password: string
+) {
+  return djangoRequest<{ registered: boolean; message: string }>(
+    "/api/academy/auth/register/",
+    {
+      method: "POST",
+      body: JSON.stringify({ username, email, password }),
+    }
+  );
+}
+
+export async function djangoVerifyEmail(uid: string, token: string) {
+  return djangoRequest<{ verified: boolean; message: string }>(
+    `/api/academy/auth/verify-email/?uid=${encodeURIComponent(uid)}&token=${encodeURIComponent(token)}`
+  );
+}
+
+export async function djangoRequestPasswordReset(email: string) {
+  return djangoRequest<{ sent: boolean; message: string }>(
+    "/api/academy/auth/password-reset/",
+    {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }
+  );
+}
+
+export async function djangoConfirmPasswordReset(
+  uid: string,
+  token: string,
+  password: string
+) {
+  return djangoRequest<{ reset: boolean; message: string }>(
+    "/api/academy/auth/password-reset/confirm/",
+    {
+      method: "POST",
+      body: JSON.stringify({ uid, token, password }),
+    }
+  );
 }
 
 export async function djangoLogout() {
